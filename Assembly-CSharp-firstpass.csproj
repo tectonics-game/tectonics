@@ -65,6 +65,8 @@
      <Compile Include="Assets\Standard Assets\CrossPlatformInput\Scripts\TiltInput.cs" />
      <Compile Include="Assets\Standard Assets\CrossPlatformInput\Scripts\TouchPad.cs" />
      <Compile Include="Assets\Standard Assets\CrossPlatformInput\Scripts\VirtualInput.cs" />
+     <None Include="Assets\material&amp;shaders\wireframeshader.shader" />
+     <None Include="Assets\material&amp;shaders\secondElevation.shader" />
      <None Include="Assets\Standard Assets\CrossPlatformInput\CrossPlatformInputGuidelines.txt" />
      <None Include="Assets\Standard Assets\Cameras\CameraGuidelines.txt" />
  <Reference Include="Facebook.Unity.Settings">

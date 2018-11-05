@@ -24,7 +24,7 @@ public class SpiralSphere : MonoBehaviour
                                  // the value of 1.5 is based on trial and error. With this value, triangulation works for all n > 3.
     private void Awake()
     {
-        Generate();
+		GenerateWithTexture();
     }
 
     private void Generate()
@@ -51,7 +51,7 @@ public class SpiralSphere : MonoBehaviour
             float phi = (i * goldenAngle) % (2 * Mathf.PI);
             Vector3 vertex = new Vector3(Mathf.Cos(phi) * r, y, Mathf.Sin(phi) * r);
             
-            vertices.Add(vertex * radius);
+			vertices.Add(vertex * radius);
             normals.Add(vertex.normalized);
 
             uv.Add(new Vector2(0.5f * phi / Mathf.PI, (Mathf.PI - Mathf.Acos(y)) / Mathf.PI)); // Using polar coordinates converted to uv
@@ -365,4 +365,127 @@ public class SpiralSphere : MonoBehaviour
         normals.Add(new Vector3(0, 1, 0));
         uv.Add(new Vector2((uv[t1].x + uv[t2].x) / 2f, 1));
     }
+
+
+	private void GenerateWithTexture()
+	{
+		if (n < 4)
+			n = 4;
+		if (n > 60000)
+			n = 60000;
+		vertices = new List<Vector3>();
+		normals = new List<Vector3>();
+		uv = new List<Vector2>();
+		ys = new float[n];
+		triangles = new List<int>();
+		GetComponent<MeshFilter>().mesh = mesh = new Mesh();
+		mesh.name = "Spiral Sphere";
+
+		float off = 2 / (float)n;
+		for (int i = 0; i < n; i++)
+		{
+			// This is the golden spiral algorithm. The points on the sphere are calculated in order of increasing y
+			float y = i * off - 1 + (off / 2);
+			ys[i] = y;
+			float r = Mathf.Sqrt(1 - y * y);
+			float phi = (i * goldenAngle) % (2 * Mathf.PI);
+			Vector3 vertex = new Vector3(Mathf.Cos(phi) * r, y, Mathf.Sin(phi) * r);
+
+			vertices.Add(vertex * radius);
+			normals.Add(vertex.normalized);
+
+			uv.Add(new Vector2(0.5f * phi / Mathf.PI, (Mathf.PI - Mathf.Acos(y)) / Mathf.PI)); // Using polar coordinates converted to uv
+		}
+
+		float maxDist = Mathf.Sqrt(4 * Mathf.PI / n) * distanceFactor * radius; // We add as few neighbors as possible for performance reasons
+		float maxDistSq = maxDist * maxDist; 
+
+		for (int i = 0; i < n; i++)
+		{
+			//Update vertices for elevation
+			//normals are not changed by elevation changes.
+			//triangles and uv need updating.
+
+
+			Vector3 vi = vertices[i];
+			List<int> neighbors = new List<int>();
+			for (int j = i + 1; j < n; j++)
+			{
+				float dy = ys[j] - ys[i]; // We calculate how far above the current vertex the other vertex is located.
+				if (dy * radius > maxDist) // If other vertices are too far above the current vertex, we stop looping.
+					continue;
+				else if ((vi - vertices[j]).sqrMagnitude < maxDistSq) // if Ihe neighbor is within range, we add it to the list.
+					neighbors.Add(j);
+			}
+
+			for (int j = 0; j < neighbors.Count; j++) // Now we traverse the list to find potential triangle candidates.
+			{
+				int nj = neighbors[j]; // We pick a first neighbor on the list
+				Vector3 vj = vertices[nj];
+				for (int k = j + 1; k < neighbors.Count; k++) // We pick a second neighbor on the list.
+				{
+					int nk = neighbors[k];
+					Vector3 vk = vertices[nk];
+
+					Vector3 center = CircleCenter(vi, vj, vk); // We calculate the center of the circle through the 3 vertices.
+					float radiusSq = (center - vi).sqrMagnitude; // We calculate the radius of the circle.
+
+					bool validTriangle = true; 
+					for (int l = 0; l < neighbors.Count; l++) // We check if any other vertex is within a circle-radius of the center.
+					{
+						if (l != j && l != k) // Only other vertices are considered (usually no more than 1 or 2)
+						{
+							if ((vertices[neighbors[l]] - center).sqrMagnitude < radiusSq)  
+							{
+								validTriangle = false; // The triangle is rejected, another vertex is too close.
+								break;                // This rejection principle comes from Delaunay triangulation
+							}
+						}
+					}
+
+					if (validTriangle)
+					{
+						Vector3 normal = Vector3.Cross(vj - vi, vk - vi);
+						if (Vector3.Dot(normal, center) > 0) // Ensure the correct winding order of the triangle.
+							CheckEdgesAddTriangle(i, nj, nk); // Check if the edges are unique and if so, add the triangle.
+						else
+							CheckEdgesAddTriangle(i, nk, nj);
+					}
+				}
+			}
+		}
+
+
+
+
+		for (int i = 0; i < n; i++) {
+			float randomizer = Random.Range (0.98f, 1.0f);
+			randomizer *= randomizer;
+			randomizer *= randomizer;
+			randomizer *= randomizer;
+			vertices [i] *= randomizer*1.02f;
+			
+		}
+
+		//if (fixUvSeams)
+		//{
+			RemoveZipper();
+			ReplacePoles();
+		//}
+
+		Color[] colors = new Color[vertices.Count];
+		for (int i = 0; i < vertices.Count; i++) {
+			colors [i] = Color.Lerp (Color.blue, Color.gray, (vertices [i].magnitude - 0.95f * radius) / (0.10f * radius));
+		}
+
+		mesh.vertices = vertices.ToArray();
+		mesh.triangles = triangles.ToArray();
+		mesh.normals = normals.ToArray();
+		mesh.uv = uv.ToArray();
+		mesh.colors = colors;
+
+
+
+	}
+
 }

@@ -48,9 +48,12 @@
   <ItemGroup>
      <Compile Include="Assets\PanCameraScript.cs" />
      <Compile Include="Assets\Spiral Sphere\SpiralSphere.cs" />
-     <Compile Include="Assets\planetScript.cs" />
+     <Compile Include="Assets\material&amp;shaders\wireframe.cs" />
+     <Compile Include="Assets\tectonics\planetScript.cs" />
      <Compile Include="Assets\tectonics\tectonicPixel.cs" />
      <Compile Include="Assets\tectonics\tectonicPlate.cs" />
+     <None Include="Assets\material&amp;shaders\wireframeshader.shader" />
+     <None Include="Assets\material&amp;shaders\secondElevation.shader" />
      <None Include="Assets\Standard Assets\CrossPlatformInput\CrossPlatformInputGuidelines.txt" />
      <None Include="Assets\Standard Assets\Cameras\CameraGuidelines.txt" />
  <Reference Include="Facebook.Unity.Settings">
